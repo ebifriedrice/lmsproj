@@ -11,25 +11,34 @@ import (
 )
 
 func (h *Handlers) Dashboard(w http.ResponseWriter, r *http.Request) {
-	// Get user data from the session.
-	userID := h.SessionManager.GetInt64(r.Context(), "authenticatedUserID")
-	userRole := h.SessionManager.GetString(r.Context(), "userRole")
-
-	// If the user is an admin, maybe redirect to an admin dashboard.
-	if userRole == "admin" {
-		http.Redirect(w, r, "/admin", http.StatusSeeOther)
-		return
-	}
-
-	// For students, show their enrolled courses.
-	enrolledCourses, err := database.GetEnrolledCoursesForStudent(h.DB, userID)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
+	// Check if a user is authenticated.
+	isAuthenticated := h.SessionManager.Exists(r.Context(), "authenticatedUserID")
 	td := h.newTemplateData(r)
-	td.Data["Courses"] = enrolledCourses
+
+	if isAuthenticated {
+		userRole := h.SessionManager.GetString(r.Context(), "userRole")
+		if userRole == "admin" {
+			http.Redirect(w, r, "/admin", http.StatusSeeOther)
+			return
+		}
+
+		// For students, show their enrolled courses.
+		userID := h.SessionManager.GetInt64(r.Context(), "authenticatedUserID")
+		enrolledCourses, err := database.GetEnrolledCoursesForStudent(h.DB, userID)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		td.Data["Courses"] = enrolledCourses
+	} else {
+		// For guests, show all available courses.
+		allCourses, err := database.GetAllCourses(h.DB)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		td.Data["Courses"] = allCourses
+	}
 
 	// Render the dashboard template.
 	h.render(w, r, "dashboard.page.tmpl", td)
@@ -43,13 +52,14 @@ func (h *Handlers) ShowCourse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Check if the student is enrolled in this course.
-	// For now, we'll allow any authenticated user to see the course page.
-
 	// Fetch the course from the database.
 	course, err := database.GetCourse(h.DB, courseID)
 	if err != nil {
-		http.Error(w, "Course not found", http.StatusNotFound)
+		if err == sql.ErrNoRows {
+			http.Error(w, "Course not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -60,19 +70,22 @@ func (h *Handlers) ShowCourse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := h.SessionManager.GetInt64(r.Context(), "authenticatedUserID")
-
-	// Get completed lessons for the user
-	completedLessons, err := database.GetCompletedLessonsForUser(h.DB, userID, courseID)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
 	td := h.newTemplateData(r)
 	td.Data["Course"] = course
 	td.Data["Lessons"] = lessons
-	td.Data["CompletedLessons"] = completedLessons
+	// Set a default empty map for completed lessons.
+	td.Data["CompletedLessons"] = make(map[int64]bool)
+
+	// If the user is authenticated, check their completed lessons.
+	if h.SessionManager.Exists(r.Context(), "authenticatedUserID") {
+		userID := h.SessionManager.GetInt64(r.Context(), "authenticatedUserID")
+		completedLessons, err := database.GetCompletedLessonsForUser(h.DB, userID, courseID)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		td.Data["CompletedLessons"] = completedLessons
+	}
 
 	h.render(w, r, "course_detail.page.tmpl", td)
 }
@@ -136,40 +149,53 @@ func (h *Handlers) ShowLesson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Check if the student is enrolled in the course this lesson belongs to.
-
-	// Fetch the content for the lesson.
-	// We use Get...ByLessonID functions. They will return sql.ErrNoRows if content doesn't exist.
-	video, errVideo := database.GetVideoByLessonID(h.DB, lessonID)
-	if errVideo != nil && errVideo != sql.ErrNoRows {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	text, errText := database.GetTextByLessonID(h.DB, lessonID)
-	if errText != nil && errText != sql.ErrNoRows {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	mcq, errMCQ := database.GetMCQByLessonID(h.DB, lessonID)
-	if errMCQ != nil && errMCQ != sql.ErrNoRows {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	userID := h.SessionManager.GetInt64(r.Context(), "authenticatedUserID")
-	isComplete, err := database.IsLessonComplete(h.DB, userID, lessonID)
+	// Fetch the lesson itself to get the title, etc.
+	lesson, err := database.GetLesson(h.DB, lessonID)
 	if err != nil {
-		isComplete = false
+		if err == sql.ErrNoRows {
+			http.Error(w, "Lesson not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
 	}
 
 	td := h.newTemplateData(r)
-	td.Data["LessonID"] = lessonID
-	td.Data["Video"] = video
-	td.Data["Text"] = text
-	td.Data["MCQ"] = mcq
-	td.Data["IsComplete"] = isComplete
+	td.Data["Lesson"] = lesson // Pass the whole lesson object
+	td.Data["IsComplete"] = false
+
+	// Only show content to authenticated users.
+	if h.SessionManager.Exists(r.Context(), "authenticatedUserID") {
+		// Fetch the content for the lesson.
+		video, errVideo := database.GetVideoByLessonID(h.DB, lessonID)
+		if errVideo != nil && errVideo != sql.ErrNoRows {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		text, errText := database.GetTextByLessonID(h.DB, lessonID)
+		if errText != nil && errText != sql.ErrNoRows {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		mcq, errMCQ := database.GetMCQByLessonID(h.DB, lessonID)
+		if errMCQ != nil && errMCQ != sql.ErrNoRows {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		userID := h.SessionManager.GetInt64(r.Context(), "authenticatedUserID")
+		isComplete, err := database.IsLessonComplete(h.DB, userID, lessonID)
+		if err != nil {
+			isComplete = false // Default to not complete on error
+		}
+
+		td.Data["Video"] = video
+		td.Data["Text"] = text
+		td.Data["MCQ"] = mcq
+		td.Data["IsComplete"] = isComplete
+	}
 
 	h.render(w, r, "lesson_detail.page.tmpl", td)
 }
