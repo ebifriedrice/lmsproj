@@ -1,0 +1,33 @@
+{{template "base" .}}
+
+{{define "title"}}Admin: User Management{{end}}
+
+{{define "nav"}}
+    {{template "nav" .}}
+{{end}}
+
+{{define "main"}}
+    <h1 class="text-2xl font-bold text-blue">User Management</h1>
+    <div class="card mt-4">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="border-b border-gray">
+                    <th class="p-2">ID</th>
+                    <th class="p-2">Username</th>
+                    <th class="p-2">Role</th>
+                    <th class="p-2">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Data.Users}}
+                <tr class="border-b border-gray">
+                    <td class="p-2">{{.ID}}</td>
+                    <td class="p-2">{{.Username}}</td>
+                    <td class="p-2">{{.Role}}</td>
+                    <td class="p-2"><a href="/admin/users/{{.ID}}" class="btn btn-orange">View Details</a></td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+{{end}}

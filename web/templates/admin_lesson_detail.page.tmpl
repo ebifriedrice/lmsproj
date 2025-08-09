@@ -1,0 +1,71 @@
+{{template "base" .}}
+
+{{define "title"}}Admin: Lesson Details{{end}}
+
+{{define "nav"}}
+    {{template "nav" .}}
+{{end}}
+
+{{define "main"}}
+    <h1 class="text-2xl font-bold text-blue">Manage Lesson Content</h1>
+    <p class="mt-2">Lesson ID: {{.Data.LessonID}}</p>
+    <hr class="my-8">
+
+    <!-- Video Content Section -->
+    <div class="card">
+        <h2 class="text-xl font-bold">Video Lecture</h2>
+        {{if .Data.Video}}
+            <p class="mt-2"><strong>Current Video:</strong> {{.Data.Video.Title}} - <a href="{{.Data.Video.VideoURL}}" class="text-orange">Link</a></p>
+            <p class="text-sm text-gray-600"><em>To replace the video, submit a new one below.</em></p>
+        {{else}}
+            <p class="mt-2">No video has been added to this lesson yet.</p>
+        {{end}}
+        <form action="/admin/lessons/{{.Data.LessonID}}/content" method="post" class="mt-4">
+            <input type="hidden" name="contentType" value="video">
+            <div class="mt-2"><label for="videoTitle">Video Title:</label><input type="text" id="videoTitle" name="videoTitle" required class="w-full p-2 border border-gray rounded"></div>
+            <div class="mt-2"><label for="videoURL">Video URL:</label><input type="url" id="videoURL" name="videoURL" required class="w-full p-2 border border-gray rounded"></div>
+            <div class="mt-4"><button type="submit" class="btn btn-blue">Add/Update Video</button></div>
+        </form>
+    </div>
+
+    <!-- Text Content Section -->
+    <div class="card mt-8">
+        <h2 class="text-xl font-bold">Text Content</h2>
+        {{if .Data.Text}}
+             <p class="mt-2"><strong>Current Title:</strong> {{.Data.Text.Title}}</p>
+             <p class="text-sm text-gray-600"><em>To replace the text, submit new content below.</em></p>
+        {{else}}
+            <p class="mt-2">No text content has been added to this lesson yet.</p>
+        {{end}}
+        <form action="/admin/lessons/{{.Data.LessonID}}/content" method="post" class="mt-4">
+            <input type="hidden" name="contentType" value="text">
+            <div class="mt-2"><label for="textTitle">Title:</label><input type="text" id="textTitle" name="textTitle" required class="w-full p-2 border border-gray rounded"></div>
+            <div class="mt-2"><label for="textContent">Content:</label><textarea id="textContent" name="textContent" rows="10" required class="w-full p-2 border border-gray rounded"></textarea></div>
+            <div class="mt-4"><button type="submit" class="btn btn-blue">Add/Update Text</button></div>
+        </form>
+    </div>
+
+    <!-- MCQ Section -->
+    <div class="card mt-8">
+        <h2 class="text-xl font-bold">Multiple Choice Question</h2>
+        {{if .Data.MCQ}}
+            <p class="mt-2"><strong>Current Question:</strong> {{.Data.MCQ.Question}}</p>
+            <p class="text-sm text-gray-600"><em>To replace the MCQ, submit a new one below.</em></p>
+        {{else}}
+            <p class="mt-2">No MCQ has been added to this lesson yet.</p>
+        {{end}}
+        <form action="/admin/lessons/{{.Data.LessonID}}/content" method="post" class="mt-4">
+            <input type="hidden" name="contentType" value="mcq">
+            <div class="mt-2"><label for="mcqQuestion">Question:</label><input type="text" id="mcqQuestion" name="mcqQuestion" required class="w-full p-2 border border-gray rounded"></div>
+            <div class="mt-4"><label>Options:</label></div>
+            <div class="grid grid-cols-2 gap-4">
+                <input type="text" name="mcqOption0" placeholder="Option 1" required class="w-full p-2 border border-gray rounded">
+                <input type="text" name="mcqOption1" placeholder="Option 2" required class="w-full p-2 border border-gray rounded">
+                <input type="text" name="mcqOption2" placeholder="Option 3" required class="w-full p-2 border border-gray rounded">
+                <input type="text" name="mcqOption3" placeholder="Option 4" required class="w-full p-2 border border-gray rounded">
+            </div>
+            <div class="mt-4"><label for="correctOption">Correct Option Index (0-3):</label><input type="number" id="correctOption" name="correctOption" min="0" max="3" required class="w-full p-2 border border-gray rounded"></div>
+            <div class="mt-4"><button type="submit" class="btn btn-blue">Add/Update MCQ</button></div>
+        </form>
+    </div>
+{{end}}

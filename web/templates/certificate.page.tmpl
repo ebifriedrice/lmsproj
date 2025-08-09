@@ -1,0 +1,20 @@
+{{template "base" .}}
+
+{{define "title"}}Certificate of Completion{{end}}
+
+{{define "nav"}}
+    <!-- No nav on public certificate page -->
+{{end}}
+
+{{define "main"}}
+    <div class="container mx-auto" style="max-width: 800px;">
+        <div class="card text-center p-8">
+            <div class="text-lg">This is to certify that</div>
+            <div class="text-4xl font-bold text-blue my-8">{{.Data.Certificate.StudentName}}</div>
+            <div class="text-lg">has successfully completed the course</div>
+            <div class="text-2xl font-bold mt-4">{{.Data.Certificate.CourseTitle}}</div>
+            <div class="mt-8 text-sm">Issued on: {{.Data.Certificate.IssuedAt.Format "January 2, 2006"}}</div>
+            <div class="mt-2 text-xs text-gray-500">Certificate ID: {{.Data.Certificate.Token}}</div>
+        </div>
+    </div>
+{{end}}

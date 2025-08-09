@@ -1,0 +1,61 @@
+{{template "base" .}}
+
+{{define "title"}}Lesson{{end}}
+
+{{define "nav"}}
+    {{template "nav" .}}
+{{end}}
+
+{{define "main"}}
+    <h1 class="text-2xl font-bold text-blue">Lesson Details</h1>
+
+    {{if .Data.Video}}
+        <div class="card mt-4">
+            <h2 class="text-xl font-bold">{{.Data.Video.Title}}</h2>
+            <div class="mt-4">
+                <!-- In a real app, you'd embed a video player here -->
+                <p>Video URL: <a href="{{.Data.Video.VideoURL}}" target="_blank" class="text-orange">{{.Data.Video.VideoURL}}</a></p>
+            </div>
+        </div>
+    {{end}}
+
+    {{if .Data.Text}}
+        <div class="card mt-4">
+            <h2 class="text-xl font-bold">{{.Data.Text.Title}}</h2>
+            <article class="mt-4 prose">
+                {{.Data.Text.Content}}
+            </article>
+        </div>
+    {{end}}
+
+    {{if .Data.MCQ}}
+        <div class="card mt-4">
+            <h2 class="text-xl font-bold">Quiz</h2>
+            <p class="mt-2">{{.Data.MCQ.Question}}</p>
+            <form action="/mcqs/{{.Data.MCQ.ID}}/submit" method="post" class="mt-4">
+                {{range $i, $option := .Data.MCQ.Options}}
+                    <div class="mt-2">
+                        <input type="radio" id="option{{$i}}" name="option" value="{{$i}}">
+                        <label for="option{{$i}}" class="ml-2">{{$option}}</label>
+                    </div>
+                {{end}}
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-blue">Submit Answer</button>
+                </div>
+            </form>
+        </div>
+    {{end}}
+
+    <div class="card mt-4">
+        <h2 class="text-xl font-bold">Complete Lesson</h2>
+        <div id="completion-form-{{.Data.LessonID}}">
+            {{if .Data.IsComplete}}
+                <div class="text-green-500 font-bold mt-2">✓ Completed</div>
+            {{else}}
+                <form hx-post="/lessons/{{.Data.LessonID}}/complete" hx-target="#completion-form-{{.Data.LessonID}}" hx-swap="innerHTML">
+                    <button type="submit" class="btn btn-orange mt-2">Mark as Complete</button>
+                </form>
+            {{end}}
+        </div>
+    </div>
+{{end}}

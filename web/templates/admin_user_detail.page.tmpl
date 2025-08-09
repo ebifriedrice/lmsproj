@@ -1,0 +1,50 @@
+{{template "base" .}}
+
+{{define "title"}}Admin: User Details{{end}}
+
+{{define "nav"}}
+    {{template "nav" .}}
+{{end}}
+
+{{define "main"}}
+    <h1 class="text-2xl font-bold text-blue">User Details: {{.Data.User.Username}}</h1>
+    <p class="mt-2">Role: {{.Data.User.Role}}</p>
+    <hr class="my-8">
+
+    <div class="card">
+        <h2 class="text-xl font-bold text-blue">Enrolled Courses</h2>
+        {{if .Data.EnrolledCourses}}
+            <ul class="list-disc pl-5 mt-4">
+                {{range .Data.EnrolledCourses}}
+                    <li class="mt-2 flex justify-between items-center">
+                        <span>{{.Title}}</span>
+                        <form action="/admin/users/{{$.Data.User.ID}}/courses/{{.ID}}/generate-certificate" method="post" class="inline-block">
+                            <button type="submit" class="btn btn-orange">Generate Certificate</button>
+                        </form>
+                    </li>
+                {{end}}
+            </ul>
+        {{else}}
+            <p class="mt-4">This user is not enrolled in any courses.</p>
+        {{end}}
+    </div>
+
+    <div class="card mt-8">
+        <h2 class="text-xl font-bold text-blue">Enroll in a New Course</h2>
+        {{if .Data.AvailableCourses}}
+            <form action="/admin/users/{{.Data.User.ID}}/enroll" method="post" class="mt-4">
+                <label for="course">Select a course:</label>
+                <select name="courseID" id="course" class="w-full p-2 border border-gray rounded mt-2">
+                    {{range .Data.AvailableCourses}}
+                        <option value="{{.ID}}">{{.Title}}</option>
+                    {{end}}
+                </select>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-blue">Enroll</button>
+                </div>
+            </form>
+        {{else}}
+            <p class="mt-4">No new courses available to enroll in.</p>
+        {{end}}
+    </div>
+{{end}}
