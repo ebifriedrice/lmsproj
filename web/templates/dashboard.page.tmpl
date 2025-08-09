@@ -7,7 +7,11 @@
 {{end}}
 
 {{define "main"}}
-    <h1 class="text-2xl font-bold text-blue">My Courses</h1>
+    {{if .IsAuthenticated}}
+        <h1 class="text-2xl font-bold text-blue">My Courses</h1>
+    {{else}}
+        <h1 class="text-2xl font-bold text-blue">Available Courses</h1>
+    {{end}}
 
     {{if .Data.Courses}}
         <div class="mt-4">
@@ -22,6 +26,10 @@
             {{end}}
         </div>
     {{else}}
-        <p class="mt-4">You are not enrolled in any courses yet.</p>
+        {{if .IsAuthenticated}}
+            <p class="mt-4">You are not enrolled in any courses yet.</p>
+        {{else}}
+            <p class="mt-4">There are no courses available at the moment. Please check back later.</p>
+        {{end}}
     {{end}}
 {{end}}

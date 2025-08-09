@@ -34,6 +34,9 @@ func (app *Application) Routes() http.Handler {
 
 	// Public routes
 	mux.Group(func(r chi.Router) {
+		r.Get("/", app.handlers.Dashboard)
+		r.Get("/courses/{courseID}", app.handlers.ShowCourse)
+		r.Get("/lessons/{lessonID}", app.handlers.ShowLesson)
 		r.Get("/register", app.handlers.RegisterForm)
 		r.Post("/register", app.handlers.Register)
 		r.Get("/login", app.handlers.LoginForm)
@@ -50,9 +53,6 @@ func (app *Application) Routes() http.Handler {
 	mux.Group(func(r chi.Router) {
 		r.Use(app.middleware.RequireAuthentication)
 
-		r.Get("/", app.handlers.Dashboard)
-		r.Get("/courses/{courseID}", app.handlers.ShowCourse)
-		r.Get("/lessons/{lessonID}", app.handlers.ShowLesson)
 		r.Post("/mcqs/{mcqID}/submit", app.handlers.SubmitMCQ)
 		r.Post("/lessons/{lessonID}/complete", app.handlers.MarkLessonComplete)
 	})

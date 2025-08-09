@@ -18,8 +18,10 @@
             {{range .Data.Lessons}}
                 <li class="mt-2">
                     <a href="/lessons/{{.ID}}" class="text-orange">{{.Title}}</a>
-                    {{if (index $.Data.CompletedLessons .ID)}}
-                        <span class="text-sm font-bold text-green-500 ml-2">(Completed)</span>
+                    {{if .IsAuthenticated}}
+                        {{if (index $.Data.CompletedLessons .ID)}}
+                            <span class="text-sm font-bold text-green-500 ml-2">(Completed)</span>
+                        {{end}}
                     {{end}}
                 </li>
             {{end}}

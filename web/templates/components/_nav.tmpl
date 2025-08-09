@@ -3,6 +3,7 @@
         {{template "admin_nav" .}}
     {{else if .IsAuthenticated}}
         {{template "student_nav" .}}
+    {{else}}
+        {{template "guest_nav" .}}
     {{end}}
-    <!-- If not authenticated, this will render nothing, which is correct for login/register pages -->
 {{end}}
