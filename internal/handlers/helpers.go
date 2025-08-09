@@ -28,11 +28,12 @@ func NewTemplateCache() (map[string]*template.Template, error) {
 		}
 
 		// Parse any component templates (partials)
-		ts, err = ts.ParseGlob("./web/templates/components/*.tmpl")
-		if err != nil {
-			// It's okay if there are no components yet.
-			if _, ok := err.(*filepath.GlobError); !ok {
-				// return nil, err
+		// It's okay if there are no components yet.
+		matches, _ := filepath.Glob("./web/templates/components/*.tmpl")
+		if len(matches) > 0 {
+			ts, err = ts.ParseGlob("./web/templates/components/*.tmpl")
+			if err != nil {
+				return nil, err
 			}
 		}
 

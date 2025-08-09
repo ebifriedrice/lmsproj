@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"lms/internal/database"
-	"lms/internal/models"
 	"net/http"
 	"strconv"
 

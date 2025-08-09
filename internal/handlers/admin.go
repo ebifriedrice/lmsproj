@@ -44,7 +44,7 @@ func (h *Handlers) CreateCourse(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/admin", http.StatusSeeOther)
 }
 
-func (h *Handlers) ShowCourse(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) ShowCourseAdmin(w http.ResponseWriter, r *http.Request) {
 	// Get the course ID from the URL parameter.
 	courseID, err := strconv.ParseInt(chi.URLParam(r, "courseID"), 10, 64)
 	if err != nil {
@@ -114,7 +114,7 @@ func (h *Handlers) CreateLesson(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/admin/courses/%d", courseID), http.StatusSeeOther)
 }
 
-func (h *Handlers) ShowLesson(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) ShowLessonAdmin(w http.ResponseWriter, r *http.Request) {
 	lessonID, err := strconv.ParseInt(chi.URLParam(r, "lessonID"), 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid lesson ID", http.StatusBadRequest)

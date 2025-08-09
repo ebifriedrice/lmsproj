@@ -1,0 +1,14 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cgo-go-app
+    image: cgo-go-app:latest
+    restart: unless-stopped
+    # Map ports if needed
+    ports:
+      - "8080:8080"
+    # Mount source for hot-reload in dev (optional)
+    # volumes:
+    #   - .:/app

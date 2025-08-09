@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"lms/internal/database"
 	"net/http"
 )

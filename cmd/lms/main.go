@@ -2,23 +2,82 @@ package main
 
 import (
 	"database/sql"
-	"log"
 	"lms/internal/database"
 	"lms/internal/handlers"
 	"lms/internal/middleware"
-	"net/http"
+	"log"
 	"time"
+
+	"net/http"
 
 	"github.com/alexedwards/scs/sqlite3store"
 	"github.com/alexedwards/scs/v2"
+	"github.com/go-chi/chi/v5"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
-// application struct holds the dependencies for the application.
-type application struct {
+// Application struct holds the dependencies for the Application.
+type Application struct {
 	db             *sql.DB
 	sessionManager *scs.SessionManager
 	handlers       *handlers.Handlers
 	middleware     *middleware.Middleware
+}
+
+func (app *Application) Routes() http.Handler {
+	mux := chi.NewRouter()
+
+	// Register global middleware
+	mux.Use(chiMiddleware.Logger)
+	mux.Use(chiMiddleware.Recoverer)
+	mux.Use(app.sessionManager.LoadAndSave)
+
+	// Public routes
+	mux.Group(func(r chi.Router) {
+		r.Get("/register", app.handlers.RegisterForm)
+		r.Post("/register", app.handlers.Register)
+		r.Get("/login", app.handlers.LoginForm)
+		r.Post("/login", app.handlers.Login)
+		r.Post("/logout", app.handlers.Logout)
+		r.Get("/certificates/{token}", app.handlers.ViewCertificate)
+
+		// Serve static files
+		fs := http.FileServer(http.Dir("./web/static/"))
+		r.Handle("/static/*", http.StripPrefix("/static/", fs))
+
+	})
+	// Protected routes for authenticated users
+	mux.Group(func(r chi.Router) {
+		r.Use(app.middleware.RequireAuthentication)
+
+		r.Get("/", app.handlers.Dashboard)
+		r.Get("/courses/{courseID}", app.handlers.ShowCourse)
+		r.Get("/lessons/{lessonID}", app.handlers.ShowLesson)
+		r.Post("/mcqs/{mcqID}/submit", app.handlers.SubmitMCQ)
+		r.Post("/lessons/{lessonID}/complete", app.handlers.MarkLessonComplete)
+	})
+
+	// Admin routes
+	mux.Route("/admin", func(r chi.Router) {
+		r.Use(app.middleware.RequireAuthentication)
+		r.Use(app.middleware.RequireAdmin)
+
+		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("Welcome to the Admin Dashboard"))
+		})
+		r.Get("/courses/new", app.handlers.CreateCourseForm)
+		r.Post("/courses/new", app.handlers.CreateCourse)
+		r.Get("/courses/{courseID}", app.handlers.ShowCourseAdmin)
+		r.Post("/courses/{courseID}/lessons", app.handlers.CreateLesson)
+		r.Get("/lessons/{lessonID}", app.handlers.ShowLessonAdmin)
+		r.Post("/lessons/{lessonID}/content", app.handlers.AddContent)
+		r.Get("/users", app.handlers.ListUsers)
+		r.Get("/users/{userID}", app.handlers.ShowUser)
+		r.Post("/users/{userID}/enroll", app.handlers.EnrollUser)
+		r.Post("/users/{userID}/courses/{courseID}/generate-certificate", app.handlers.GenerateCertificate)
+	})
+
+	return mux
 }
 
 func main() {
@@ -60,7 +119,7 @@ func main() {
 	mw := middleware.NewMiddleware(sessionManager)
 
 	// Create an instance of the application struct.
-	app := &application{
+	app := &Application{
 		db:             db,
 		sessionManager: sessionManager,
 		handlers:       h,
@@ -70,7 +129,7 @@ func main() {
 	// Set up the HTTP server.
 	srv := &http.Server{
 		Addr:    ":8080",
-		Handler: app.routes(), // Use the chi router
+		Handler: app.Routes(), // Use the chi router
 	}
 
 	log.Printf("Starting server on %s", srv.Addr)
