@@ -1,0 +1,27 @@
+{{template "base" .}}
+
+{{define "title"}}Dashboard{{end}}
+
+{{define "nav"}}
+    {{template "nav" .}}
+{{end}}
+
+{{define "main"}}
+    <h1 class="text-2xl font-bold text-blue">My Courses</h1>
+
+    {{if .Data.Courses}}
+        <div class="mt-4">
+            {{range .Data.Courses}}
+                <div class="card mt-4">
+                    <h2 class="text-xl font-bold text-blue">{{.Title}}</h2>
+                    <p class="mt-2">{{.Description}}</p>
+                    <div class="mt-4">
+                        <a href="/courses/{{.ID}}" class="btn btn-orange">View Course</a>
+                    </div>
+                </div>
+            {{end}}
+        </div>
+    {{else}}
+        <p class="mt-4">You are not enrolled in any courses yet.</p>
+    {{end}}
+{{end}}
